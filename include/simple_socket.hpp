@@ -303,7 +303,7 @@ protected:
      * @brief Initialize addrinfo with the supplied args.
      *              It starts working after zerofilling addrinfo, so if you want to insert additional hints into addrinfo, you should do so after calling this method.
      *
-     * @param [in, out] pHints Addrinfo to use as hints.
+     * @param [in, out] pHints addrinfo to use as hints.
      * @param [in] pSockHints SocketHints of the options to reference when initializing addrinfo.
      */
     static void get_addrinfo_hints(addrinfo& hints, const SocketHints& socHints);

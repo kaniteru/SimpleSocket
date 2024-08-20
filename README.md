@@ -37,7 +37,7 @@ info.m_backlog = SOMAXCONN;
 
 kani::TcpServer server(tcpInfo);
 
-if (!server.is_valid() || !server.start() = kani::SS_START_RESULT_SUCCESS) {
+if (!server.is_valid() || server.start() != kani::SS_START_RESULT_SUCCESS) {
     return;
 }
 
@@ -59,7 +59,7 @@ server.stop();
 ```cpp
 kani::TcpClient client(info);
 
-if (!client.is_valid() || !client.start() = kani::SS_START_RESULT_SUCCESS) {
+if (!client.is_valid() || client.start() != kani::SS_START_RESULT_SUCCESS) {
     return;
 }
 
@@ -81,7 +81,7 @@ client.stop();
 ```cpp
 kani::UdpServer server(info);
 
-if (!server.is_valid() || !server.start() = kani::SS_START_RESULT_SUCCESS) {
+if (!server.is_valid() || server.start() != kani::SS_START_RESULT_SUCCESS) {
     return;
 }
 
@@ -101,7 +101,7 @@ server.stop();
 ```cpp
 kani::UdpClient client(info);
 
-if (!client.is_valid() || !client.start() = kani::SS_START_RESULT_SUCCESS) {
+if (!client.is_valid() || client.start() != kani::SS_START_RESULT_SUCCESS) {
     return;
 }
 

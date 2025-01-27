@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.28.1)
+cmake_minimum_required(VERSION 2.8.12...3.5)
 project(SimpleSocket)
 
-add_subdirectory(examples)
+option(BUILD_SIMPLE_SOCKET_EXAMPLES "Build the simple socket example projects" ON)
+
+if(BUILD_SIMPLE_SOCKET_EXAMPLES)
+    add_subdirectory(examples)
+endif()

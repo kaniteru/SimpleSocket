@@ -72,7 +72,7 @@ typedef int32_t kani_flag_t;
 #else
     #define KANI_INVALID_SOCKET        (-1)
     #define KANI_SOCKET_ERROR            (-1)
-    #define KANI_CLOSE_SOCKET(SOCK) close(SOCK);
+    #define KANI_CLOSE_SOCKET(SOCK) ::close(SOCK);
 #endif //_WIN32
 
 #if CURRENT_CXX_VERSION < 201103L

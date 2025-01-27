@@ -59,25 +59,32 @@ typedef int32_t kani_flag_t;
 // ===    MACRO DEFINES
 // =========================================================
 
-#define KANI_MAX_SIZE ((size_t) - 1)
-#define KANI_MAX_IP_LEN INET6_ADDRSTRLEN
-#define KANI_MAX_PORT_LEN 5
-#define KANI_INVALID_BUF_LEN 0
+#define KANI_MAX_SIZE                            ((size_t) - 1)
+#define KANI_MAX_IP_LEN                        INET6_ADDRSTRLEN
+#define KANI_MAX_PORT_LEN                  5
+#define KANI_INVALID_BUF_LEN             0
 #define KANI_DEFAULT_MAX_MSG_LEN 1024
 
 #ifdef _WIN32
-    #define KANI_INVALID_SOCKET INVALID_SOCKET
-    #define KANI_SOCKET_ERROR SOCKET_ERROR
+    #define KANI_INVALID_SOCKET         INVALID_SOCKET
+    #define KANI_SOCKET_ERROR            SOCKET_ERROR
     #define KANI_CLOSE_SOCKET(SOCK) closesocket(SOCK);
 #else
-    #define KANI_INVALID_SOCKET (-1)
-    #define KANI_SOCKET_ERROR (-1)
+    #define KANI_INVALID_SOCKET        (-1)
+    #define KANI_SOCKET_ERROR            (-1)
     #define KANI_CLOSE_SOCKET(SOCK) close(SOCK);
 #endif //_WIN32
 
 #if CURRENT_CXX_VERSION < 201103L
     #define override
+    #define KANI_NULLPTR NULL
+#else
+    #define KANI_NULLPTR nullptr
 #endif //CURRENT_CXX_VERSION < 201103L
+
+#ifdef KANITERU_ASYNC_SOCKET_INCLUDED
+    #define KANITERU_SIMPLE_SOCKET_CHECKED_ASYNC_SOCKET_INCLUDE
+#endif //KANITERU_ASYNC_SOCKET_INCLUDED
 
 namespace kani {
 
@@ -94,7 +101,7 @@ enum eSSMsgStatus {
     SS_MSG_STATUS_UNKNOWN,
     /* Sent or received success. */
     SS_MSG_STATUS_SUCCESS,
-    /* In udp client, received msg success but sender is not the server we want. */
+    /* In the udp client, received msg success but sender isn't the server we want. */
     SS_MSG_STATUS_SUCCESS_FROM_UNKNOWN_HOST,
     /* Received failed, to know the cause, need calling strerror(errno) or WSAGetLastError(). */
     SS_MSG_STATUS_FAILED,
@@ -117,6 +124,13 @@ public:
      */
     explicit Msg(const std::string& msg);
 
+#if CURRENT_CXX_VERSION >= 201103L
+    /**
+     * @param [in] msg Contents of the buffer to initialize.
+     */
+    explicit Msg(std::string&& msg);
+#endif //CURRENT_CXX_VERSION >= 201103L
+
     /**
      * @param [in] pMsg Char pointer for buffer.
      * @param [in] len Buffer length of pStr.
@@ -132,6 +146,13 @@ inline
 Msg::Msg(const std::string& msg) :
     m_msg(msg),
     m_status(SS_MSG_STATUS_UNKNOWN) { }
+
+#if CURRENT_CXX_VERSION >= 201103L
+inline
+Msg::Msg(std::string&& msg) :
+    m_msg(std::move(msg)),
+    m_status(SS_MSG_STATUS_UNKNOWN) { }
+#endif //CURRENT_CXX_VERSION >= 201103L
 
 inline
 Msg::Msg(const char* pMsg, const size_t& len) :
@@ -169,6 +190,13 @@ public:
     */
     explicit SendMsg(const std::string& msg);
 
+#if CURRENT_CXX_VERSION >= 201103L
+    /**
+     * @param [in] msg Buffer to send.
+     */
+    explicit SendMsg(std::string&& msg);
+#endif //CURRENT_CXX_VERSION >= 201103L
+
     /**
     * @param [in] pMsg Char pointer for buffer to send.
     * @param [in] len Buffer length of pStr.
@@ -184,6 +212,13 @@ inline
 SendMsg::SendMsg(const std::string& msg) :
     Msg(msg),
     m_sentLen(0) { }
+
+#if CURRENT_CXX_VERSION >= 201103L
+inline
+SendMsg::SendMsg(std::string&& msg) :
+    Msg(std::move(msg)),
+    m_sentLen(0) { }
+#endif //CURRENT_CXX_VERSION >= 201103L
 
 inline
 SendMsg::SendMsg(const char* pMsg, const size_t& len) :
@@ -209,7 +244,7 @@ SendMsg::SendMsg(const char* pMsg, const size_t& len) :
 struct RecvMsg : public Msg {
     kani_buflen_t m_recvLen; /* Length of received buffer */
 protected:
-    size_t m_maxLen; /* Receivable buffer length, Must be less than 'KANI_MAX_SIZE'. */
+    size_t m_maxLen; /* Receivable buffer length. Must be less than 'KANI_MAX_SIZE'. */
 
 public:
     /**
@@ -267,12 +302,23 @@ struct SocketHints {
  * @brief Used to return whether the socket is initialized or not.
  */
 enum eSSStartResult {
-    SS_START_RESULT_SUCCESS = 0,
+    /* Started successfully. */
+    SS_START_RESULT_SUCCESS                                  = 0,
+    /* Failed to start because already started. */
     SS_START_RESULT_FAILED_ALREADY_STARTED = 1,
-    SS_START_RESULT_FAILED_CREATE_SOCKET = 2,
-    SS_START_RESULT_FAILED_BIND_SOCKET = 3,
-    SS_START_RESULT_FAILED_LISTEN_SOCKET = 4,
+    /* Failed to start because can't create the socket. */
+    SS_START_RESULT_FAILED_CREATE_SOCKET      = 2,
+    /* Failed to start because can't bind the socket. */
+    SS_START_RESULT_FAILED_BIND_SOCKET          = 3,
+    /* Failed to start because can't listen socket. */
+    SS_START_RESULT_FAILED_LISTEN_SOCKET      = 4,
 };
+
+#ifdef KANITERU_ASYNC_SOCKET_INCLUDED
+namespace async_socket {
+    class IAsyncSocket;
+}
+#endif //KANITERU_ASYNC_SOCKET_INCLUDED
 
 /**
  * @brief Server and Client Interface.
@@ -295,7 +341,7 @@ public:
     virtual eSSStartResult start() = 0;
 
     /**
-     * @brief This should shutdown the server or client and close the socket.
+     * @brief This should shut down the server or client and close the socket.
      */
     virtual void stop() = 0;
 protected:
@@ -303,19 +349,19 @@ protected:
      * @brief Initialize addrinfo with the supplied args.
      *              It starts working after zerofilling addrinfo, so if you want to insert additional hints into addrinfo, you should do so after calling this method.
      *
-     * @param [in, out] pHints addrinfo to use as hints.
-     * @param [in] pSockHints SocketHints of the options to reference when initializing addrinfo.
+     * @param [in, out] hints addrinfo to use as hints.
+     * @param [in] sockHints SocketHints of the options to reference when initializing addrinfo.
      */
-    static void get_addrinfo_hints(addrinfo& hints, const SocketHints& socHints);
+    static void get_addrinfo_hints(addrinfo& hints, const SocketHints& sockHints);
 
     /**
      * @brief Initialize the m_pAddrInfo by referencing SocketInfo and SocketHints.
      *
      * @param [in] info
-     * @param [in] socHints
+     * @param [in] sockHints
      * @return Returns false if the information provided in SocketInfo or SocketHints is invalid.
      */
-    bool parse_socketinfo(const SocketInfo& info, const SocketHints& socHints);
+    bool parse_socketinfo(const SocketInfo& info, const SocketHints& sockHints);
 
 public:
     ISocket();
@@ -323,7 +369,7 @@ public:
     /**
      * @brief Close the socket and free m_pAddrInfo.
      */
-    ~ISocket();
+    virtual ~ISocket();
 protected:
     bool m_isValid; /* Is socket can be initialized? */
     kani_socket_t m_socket; /* Socket on the server or client */
@@ -331,7 +377,10 @@ protected:
 private:
 #ifdef _WIN32
     WSAData m_wsaData; /* Required on win32 only */
-#endif
+#endif //_WIN32
+#ifdef KANITERU_ASYNC_SOCKET_INCLUDED
+    friend async_socket::IAsyncSocket;
+#endif //KANITERU_ASYNC_SOCKET_INCLUDED
 };
 
 inline
@@ -340,10 +389,10 @@ bool ISocket::is_valid() const {
 }
 
 inline
-void ISocket::get_addrinfo_hints(addrinfo& hints, const SocketHints& socHints) {
+void ISocket::get_addrinfo_hints(addrinfo& hints, const SocketHints& sockHints) {
     memset(&hints, 0, sizeof(hints));
 
-    if (socHints.m_isTcp) {
+    if (sockHints.m_isTcp) {
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_protocol = IPPROTO_TCP;
     } else {
@@ -351,15 +400,15 @@ void ISocket::get_addrinfo_hints(addrinfo& hints, const SocketHints& socHints) {
         hints.ai_protocol = IPPROTO_UDP;
     }
 
-    if (socHints.m_isServer) {
+    if (sockHints.m_isServer) {
         hints.ai_flags = AI_PASSIVE;
     }
 }
 
 inline
-bool ISocket::parse_socketinfo(const SocketInfo& info, const SocketHints& socHints) {
+bool ISocket::parse_socketinfo(const SocketInfo& info, const SocketHints& sockHints) {
     addrinfo hints;
-    get_addrinfo_hints(hints, socHints);
+    get_addrinfo_hints(hints, sockHints);
 
     hints.ai_family = info.m_protocolFamily;
 
@@ -370,7 +419,7 @@ inline
 ISocket::ISocket() :
         m_isValid(true),
         m_socket(KANI_INVALID_SOCKET),
-        m_pAddrInfo(NULL) {
+        m_pAddrInfo(KANI_NULLPTR) {
 
 #ifdef _WIN32
     if (WSAStartup(MAKEWORD(2, 2), &m_wsaData) != 0) {
@@ -388,7 +437,7 @@ ISocket::~ISocket() {
 
     if (m_pAddrInfo) {
         freeaddrinfo(m_pAddrInfo);
-        m_pAddrInfo = NULL;
+        m_pAddrInfo = KANI_NULLPTR;
     }
 
 #ifdef _WIN32
@@ -422,7 +471,11 @@ public:
      * @return Returns true if the message was successfully received from the server.
      */
     virtual bool recv_msg(RecvMsg* pMsg, kani_flag_t flag) = 0;
+
+    virtual ~IClient();
 };
+
+inline IClient::~IClient() { }
 
 // ======================== C L A S S ========================
 // ===    NetAddr
@@ -492,7 +545,7 @@ const std::string& NetAddr::get_port() const {
 }
 
 inline
-bool NetAddr::parse_addr(kani_flag_t flags) {
+bool NetAddr::parse_addr(const kani_flag_t flags) {
     char ip[KANI_MAX_IP_LEN + 1];
     char port[KANI_MAX_PORT_LEN + 1];
     memset(ip, 0, sizeof(ip));
@@ -552,7 +605,7 @@ public:
     static bool send_msg(const kani_socket_t* pSocket, SendMsg* pMsg, kani_flag_t flag);
 
     /**
-     * @brief Receive incoming message from the socket.
+     * @brief Receive an incoming message from the socket.
      *
      * @param [in] pSocket
      * @param [in, out] pMsg
@@ -617,7 +670,7 @@ bool TcpMsgHelper::recv_msg(const kani_socket_t* pSocket, RecvMsg* pMsg, kani_fl
     pMsg->m_status = SS_MSG_STATUS_SUCCESS;
 
     delete[] pStr;
-    pStr = NULL;
+    pStr = KANI_NULLPTR;
     return true;
 }
 
@@ -671,7 +724,7 @@ public:
     static bool send_msg(const kani_socket_t* pSocket, SendMsg* const pMsg, const NetAddr* pNetAddr, kani_flag_t flag);
 
     /**
-     * @brief Receive incoming message from the socket.
+     * @brief Receive an incoming message from the socket.
      *
      * @param [in] pSocket
      * @param [in, out] pMsg
@@ -696,7 +749,7 @@ public:
     static bool recv_msg(const kani_socket_t* pSocket, RecvMsg* const pMsg, sockaddr* const pAddr, kani_socklen_t* const pAddrLen, kani_flag_t flag);
 
     /**
-     * @brief Receive incoming message from the socket.
+     * @brief Receive an incoming message from the socket.
      *
      * @param [in] pSocket
      * @param [in, out] pMsg
@@ -778,14 +831,14 @@ bool UdpMsgHelper::recv_msg(const kani_socket_t* pSocket, RecvMsg* const pMsg, s
     pMsg->m_status = SS_MSG_STATUS_SUCCESS;
 
     delete[] pStr;
-    pStr = NULL;
+    pStr = KANI_NULLPTR;
     return true;
 }
 
 inline
 bool UdpMsgHelper::recv_msg(const kani_socket_t* pSocket, RecvMsg* const pMsg, NetAddr* const pNetAddr, kani_flag_t flag) {
     if (!pNetAddr) {
-        return recv_msg(pSocket, pMsg, NULL, NULL, flag);
+        return recv_msg(pSocket, pMsg, KANI_NULLPTR, KANI_NULLPTR, flag);
     }
 
     sockaddr_storage addr;
@@ -811,7 +864,7 @@ class TcpNetClient : public NetAddr {
 public:
     /**
      * @brief Get socket ID.
-     * <br>Note: Before used TcpNetClient::disconnect(), it always returns KANI_INVALID_SOCKET.
+     * <br>Note: Before used TcpNetClient::close(), it always returns KANI_INVALID_SOCKET.
      *
     * @return Returns the socket ID.
     */
@@ -820,12 +873,12 @@ public:
     /**
      * @return Returns true if the client socket is closed.
      */
-    bool is_disconnected() const;
+    bool is_closed() const;
 
     /**
      * @brief Close the client socket.
      */
-    void disconnect();
+    void close();
 
 public:
     TcpNetClient();
@@ -850,13 +903,13 @@ kani_socket_t TcpNetClient::get_socket() const {
 }
 
 inline
-bool TcpNetClient::is_disconnected() const {
+bool TcpNetClient::is_closed() const {
     return m_socket == KANI_INVALID_SOCKET;
 }
 
 inline
-void TcpNetClient::disconnect() {
-    if (this->is_disconnected()) {
+void TcpNetClient::close() {
+    if (this->is_closed()) {
         return;
     }
 
@@ -870,13 +923,13 @@ TcpNetClient::TcpNetClient() :
 
 inline
 TcpNetClient::TcpNetClient(const sockaddr_storage& addr) :
-        m_socket(KANI_INVALID_SOCKET),
-        NetAddr(addr) { }
+    NetAddr(addr),
+    m_socket(KANI_INVALID_SOCKET) { }
 
 inline
-TcpNetClient::TcpNetClient(kani_socket_t socket, const sockaddr_storage& addr) :
-        m_socket(socket),
-        NetAddr(addr) { }
+TcpNetClient::TcpNetClient(const kani_socket_t socket, const sockaddr_storage& addr) :
+    NetAddr(addr),
+    m_socket(socket) { }
 
 // ======================= S T R U C T =======================
 // ===    TcpServerSocketInfo
@@ -912,7 +965,7 @@ public:
     virtual eSSStartResult start() override;
 
     /**
-     * @brief Check for incoming client to the server.
+     * @brief Check for an incoming client to the server.
      *
      * @param [out] pClient
      * @return Returns true when the client is connected and initialises pClient.
@@ -926,7 +979,7 @@ public:
      * }
      * @endcode
      */
-    bool wait_client(TcpNetClient* pClient);
+    bool wait_client(TcpNetClient* pClient) const;
 
     /**
      * @brief Sends a message to the client.
@@ -944,7 +997,7 @@ public:
      * if (server.send_msg(&client, &msg, ...)) { ... }
      * @endcode
      */
-    bool send_msg(TcpNetClient* pClient, SendMsg* pMsg, kani_flag_t flag = 0) const;
+    bool send_msg(const TcpNetClient* pClient, SendMsg* pMsg, kani_flag_t flag = 0) const;
 
     /**
      * @brief Receive a message from the client.
@@ -962,7 +1015,7 @@ public:
      * if (server.recv_msg(&client, &msg, ...)) { ... }
      * @endcode
      */
-    bool recv_msg(TcpNetClient* pClient, RecvMsg* pMsg, kani_flag_t flag = 0) const;
+    bool recv_msg(const TcpNetClient* pClient, RecvMsg* pMsg, kani_flag_t flag = 0) const;
 
     /**
      * @brief Shutdown the server.
@@ -974,7 +1027,7 @@ public:
      * @param [in] info
      */
     explicit TcpServer(const TcpServerSocketInfo& info);
-    ~TcpServer();
+    virtual ~TcpServer();
 protected:
     int32_t m_backlog;
 };
@@ -1005,7 +1058,7 @@ eSSStartResult TcpServer::start() {
 }
 
 inline
-bool TcpServer::wait_client(TcpNetClient* pClient) {
+bool TcpServer::wait_client(TcpNetClient* pClient) const {
     if (!pClient) {
         return false;
     }
@@ -1014,7 +1067,7 @@ bool TcpServer::wait_client(TcpNetClient* pClient) {
     kani_socklen_t addrLen = sizeof(addr);
     memset(&addr, 0, sizeof(addr));
 
-    kani_socket_t socket = accept(m_socket, reinterpret_cast<sockaddr*>(&addr), &addrLen);
+    const kani_socket_t socket = accept(m_socket, reinterpret_cast<sockaddr*>(&addr), &addrLen);
 
     if (socket == KANI_INVALID_SOCKET) {
         return false;
@@ -1025,22 +1078,22 @@ bool TcpServer::wait_client(TcpNetClient* pClient) {
 }
 
 inline
-bool TcpServer::send_msg(TcpNetClient* pClient, SendMsg* pMsg, kani_flag_t flag) const {
+bool TcpServer::send_msg(const TcpNetClient* pClient, SendMsg* pMsg, kani_flag_t flag) const {
     if (!pClient) {
         return false;
     }
 
-    kani_socket_t socket = pClient->get_socket();
+    const kani_socket_t socket = pClient->get_socket();
     return TcpMsgHelper::send_msg(&socket, pMsg, flag);
 }
 
 inline
-bool TcpServer::recv_msg(TcpNetClient* pClient, RecvMsg* pMsg, kani_flag_t flag) const {
+bool TcpServer::recv_msg(const TcpNetClient* pClient, RecvMsg* pMsg, const kani_flag_t flag) const {
     if (!pClient) {
         return false;
     }
 
-    kani_socket_t socket = pClient->get_socket();
+    const kani_socket_t socket = pClient->get_socket();
     return TcpMsgHelper::recv_msg(&socket, pMsg, flag);
 }
 
@@ -1110,7 +1163,7 @@ public:
      * }
      * @endcode
      */
-    bool connect();
+    bool connect() const;
 
     /**
      * @brief Send a message to the server.
@@ -1146,7 +1199,7 @@ public:
 
     /**
      * @brief Shutdown the client.
-     *              If you want reconnect to the server, you must call start() before calling connect().
+     *              If you want to reconnect to the server, you must call start() before calling connect().
      */
     virtual void stop() override;
 
@@ -1155,7 +1208,7 @@ public:
      * @param [in] info
      */
     explicit TcpClient(const SocketInfo& info);
-    ~TcpClient();
+    virtual ~TcpClient();
 };
 
 inline
@@ -1174,7 +1227,7 @@ eSSStartResult TcpClient::start() {
 }
 
 inline
-bool TcpClient::connect() {
+bool TcpClient::connect() const {
     return ::connect(m_socket, m_pAddrInfo->ai_addr, m_pAddrInfo->ai_addrlen) != KANI_SOCKET_ERROR;
 }
 
@@ -1254,7 +1307,7 @@ public:
      * if (server.send_msg(&client, &msg, ...)) { ... }
      * @endcode
      */
-    bool send_msg(NetAddr* pClient, SendMsg* pMsg, kani_flag_t flag = 0);
+    bool send_msg(const NetAddr* pClient, SendMsg* pMsg, kani_flag_t flag = 0);
 
     /**
      * @brief Receive a message from the client.
@@ -1286,7 +1339,7 @@ public:
      * @param [in] info
      */
     explicit UdpServer(const SocketInfo& info);
-    ~UdpServer();
+    virtual ~UdpServer();
 };
 
 inline
@@ -1310,7 +1363,7 @@ eSSStartResult UdpServer::start() {
 }
 
 inline
-bool UdpServer::send_msg(NetAddr* pClient, SendMsg* pMsg, kani_flag_t flag) {
+bool UdpServer::send_msg(const NetAddr* pClient, SendMsg* pMsg, kani_flag_t flag) {
     if (!pClient || !pMsg) {
         return false;
     }
@@ -1417,7 +1470,7 @@ public:
 
 public:
     explicit UdpClient(const SocketInfo& info);
-    ~UdpClient();
+    virtual ~UdpClient();
 protected:
     NetAddr m_netServer;
 };

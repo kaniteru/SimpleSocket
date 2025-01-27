@@ -1,12 +1,12 @@
 #include <simple_socket.hpp>
 #include <iostream>
 
-#define DEFAULT_IP                                      "localhost"
-#define DEFAULT_PORT                                "1234"
-#define DEFAULT_PROTOCOL_FAMILY     AF_UNSPEC
-#define DEFAULT_BACKLOG                         SOMAXCONN
+#define DEFAULT_IP                               "localhost"
+#define DEFAULT_PORT                         "1234"
+#define DEFAULT_PROTOCOL_FAMILY AF_UNSPEC
 
-#define DEFAULT_RECV_MSG_LEN             255
+#define DEFAULT_BACKLOG                   SOMAXCONN
+#define DEFAULT_RECV_MSG_LEN       255
 
 int main(int argc, char* argv[]) {
     kani::TcpServerSocketInfo info;
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Client: " << response.m_msg << std::endl;
 
     std::cout << "Perfect! Now, say to goodbye :')" << std::endl;
-    client.disconnect();
+    client.close();
 
     std::cout << "stopping the server..." << std::endl;
     server.stop();

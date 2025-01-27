@@ -1,11 +1,11 @@
 #include <simple_socket.hpp>
 #include <iostream>
 
-#define DEFAULT_IP                                      "localhost"
-#define DEFAULT_PORT                                "1234"
-#define DEFAULT_PROTOCOL_FAMILY     AF_UNSPEC
+#define DEFAULT_IP                                "localhost"
+#define DEFAULT_PORT                          "1234"
+#define DEFAULT_PROTOCOL_FAMILY AF_UNSPEC
 
-#define DEFAULT_RECV_MSG_LEN             255
+#define DEFAULT_RECV_MSG_LEN        255
 
 int main(int argc, char* argv[]) {
     kani::SocketInfo info;

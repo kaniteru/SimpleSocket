@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 98)
 
 function(add_example_project name src)
     add_executable(${name} "${src}")
-    target_include_directories(${name} PRIVATE "${CMAKE_SOURCE_DIR}/include")
+    target_include_directories(${name} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 
     if (WIN32)
         target_link_libraries(${name} PRIVATE Ws2_32 Mswsock AdvApi32)

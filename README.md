@@ -19,10 +19,12 @@ Easy to use C++ TCP/UDP socket wrapper
 **You can see more example projects [here](https://github.com/kaniteru/SimpleSocket/tree/main/examples).**
 
 ```cpp
-#include <simple_socket.hpp>
+#include <kani/simple_socket.hpp>
+
+using namespace kani::simple_socket;
 ```
 ```cpp
-kani::SocketInfo info;
+SocketInfo info;
 info.m_node = "localhost"; // host name or ip address
 info.m_service = 1234;     // node name or port number
 ```
@@ -30,14 +32,14 @@ info.m_service = 1234;     // node name or port number
 ### TCP Server
 
 ```cpp
-kani::TcpServerSocketInfo tcpInfo;
+TcpServerSocketInfo tcpInfo;
 info.m_node = "localhost";
 info.m_service = 1234;
 info.m_backlog = SOMAXCONN;
 
-kani::TcpServer server(tcpInfo);
+TcpServer server(tcpInfo);
 
-if (!server.is_valid() || server.start() != kani::SS_START_RESULT_SUCCESS) {
+if (!server.is_valid() || server.start() != SS_START_RESULT_SUCCESS) {
     return;
 }
 
@@ -45,10 +47,10 @@ TcpNetClient client;
 
 while (!server.wait_client(&client)) { }
 
-kani::SendMsg msg("hello world!");
+SendMsg msg("hello world!");
 server.send_msg(&client, &msg);
 
-kani::RecvMsg response;
+RecvMsg response;
 server.recv_msg(&client, &response);
 
 server.stop();
@@ -57,9 +59,9 @@ server.stop();
 ### TCP Client
 
 ```cpp
-kani::TcpClient client(info);
+TcpClient client(info);
 
-if (!client.is_valid() || client.start() != kani::SS_START_RESULT_SUCCESS) {
+if (!client.is_valid() || client.start() != SS_START_RESULT_SUCCESS) {
     return;
 }
 
@@ -67,10 +69,10 @@ if (!client.connect()) {
     return;
 }
 
-kani::SendMsg msg("hello world!");
+SendMsg msg("hello world!");
 client.send_msg(&msg);
 
-kani::RecvMsg response;
+RecvMsg response;
 client.recv_msg(&response);
 
 client.stop();
@@ -79,18 +81,18 @@ client.stop();
 ### UDP Server
 
 ```cpp
-kani::UdpServer server(info);
+UdpServer server(info);
 
-if (!server.is_valid() || server.start() != kani::SS_START_RESULT_SUCCESS) {
+if (!server.is_valid() || server.start() != SS_START_RESULT_SUCCESS) {
     return;
 }
 
 NetAddr client;
 
-kani::RecvMsg msg;
+RecvMsg msg;
 server.recv_msg(&client, &msg);
 
-kani::SendMsg response("hello world!");
+SendMsg response("hello world!");
 server.send_msg(&client, &response);
 
 server.stop();
@@ -99,16 +101,16 @@ server.stop();
 ### UDP Client
 
 ```cpp
-kani::UdpClient client(info);
+UdpClient client(info);
 
-if (!client.is_valid() || client.start() != kani::SS_START_RESULT_SUCCESS) {
+if (!client.is_valid() || client.start() != SS_START_RESULT_SUCCESS) {
     return;
 }
 
-kani::SendMsg msg("hello world!");
+SendMsg msg("hello world!");
 client.send_msg(&msg);
 
-kani::RecvMsg response;
+RecvMsg response;
 client.recv_msg(&response);
 
 client.stop();

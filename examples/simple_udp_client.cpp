@@ -1,4 +1,4 @@
-#include <simple_socket.hpp>
+#include <kani/simple_socket.hpp>
 #include <iostream>
 
 #define DEFAULT_IP                                "localhost"
@@ -8,24 +8,26 @@
 #define DEFAULT_RECV_MSG_LEN        255
 
 int main(int argc, char* argv[]) {
-    kani::SocketInfo info;
-    info.m_node = DEFAULT_IP;
-    info.m_service = DEFAULT_PORT;
+    using namespace kani::simple_socket;
+
+    SocketInfo info;
+    info.m_node                 = DEFAULT_IP;
+    info.m_service             = DEFAULT_PORT;
     info.m_protocolFamily = DEFAULT_PROTOCOL_FAMILY;
 
-    kani::UdpClient client(info);
+    UdpClient client(info);
 
     if (!client.is_valid()) {
         std::cerr << "can't initialized client!" << std::endl;
         return 1;
     }
 
-    if (client.start() != kani::SS_START_RESULT_SUCCESS) {
+    if (client.start() != SS_START_RESULT_SUCCESS) {
         std::cerr << "can't start the client!" << std::endl;
         return 1;
     }
 
-    kani::SendMsg msg;
+    SendMsg msg;
     msg.m_msg = "Hello, server! I'm a client. How are you? :3";
 
     if (!client.send_msg(&msg)) {
@@ -35,10 +37,10 @@ int main(int argc, char* argv[]) {
 
     std::cout << "sent message to server: " << msg.m_sentLen << "byte" << std::endl;
 
-    kani::RecvMsg response(DEFAULT_RECV_MSG_LEN);
-    bool isValid = client.recv_msg(&response);
+    RecvMsg response(DEFAULT_RECV_MSG_LEN);
+    const bool isValid = client.recv_msg(&response);
 
-    if (!isValid && response.m_status != kani::SS_MSG_STATUS_SUCCESS_FROM_UNKNOWN_HOST) {
+    if (!isValid && response.m_status != SS_MSG_STATUS_SUCCESS_FROM_UNKNOWN_HOST) {
         std::cerr << "can't received message from server!" << std::endl;
         return 1;
     }

@@ -1,4 +1,4 @@
-#include <simple_socket.hpp>
+#include <kani/simple_socket.hpp>
 #include <iostream>
 
 #define DEFAULT_IP                                "localhost"
@@ -8,25 +8,27 @@
 #define DEFAULT_RECV_MSG_LEN        255
 
 int main(int argc, char* argv[]) {
-    kani::SocketInfo info;
-    info.m_node = DEFAULT_IP;
-    info.m_service = DEFAULT_PORT;
+    using namespace kani::simple_socket;
+
+    SocketInfo info;
+    info.m_node                 = DEFAULT_IP;
+    info.m_service             = DEFAULT_PORT;
     info.m_protocolFamily = DEFAULT_PROTOCOL_FAMILY;
 
-    kani::UdpServer server(info);
+    UdpServer server(info);
 
     if (!server.is_valid()) {
         std::cerr << "can't initialized server!" << std::endl;
         return 1;
     }
 
-    if (server.start() != kani::SS_START_RESULT_SUCCESS) {
+    if (server.start() != SS_START_RESULT_SUCCESS) {
         std::cerr << "can't start the server!" << std::endl;
         return 1;
     }
 
-    kani::NetAddr client;
-    kani::RecvMsg msg(DEFAULT_RECV_MSG_LEN);
+    NetAddr client;
+    RecvMsg msg(DEFAULT_RECV_MSG_LEN);
 
     std::cout << "waiting for client message..." << std::endl;
 
@@ -35,11 +37,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::cout << "client ( " << client.get_ip() << " : " << client.get_port() << " ) sent message!" << std::endl;
+    std::cout << "client ( " << client.get_host() << " : " << client.get_service() << " ) sent message!" << std::endl;
     std::cout << "received message from client: " << msg.m_recvLen << "byte" << std::endl;
     std::cout << "Client: " << msg.m_msg << std::endl;
 
-    kani::SendMsg response;
+    SendMsg response;
     response.m_msg = "Hello, client! I'm a server. It's nice :p";
 
     if (!server.send_msg(&client, &response)) {

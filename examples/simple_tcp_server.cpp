@@ -1,40 +1,42 @@
-#include <simple_socket.hpp>
+#include <kani/simple_socket.hpp>
 #include <iostream>
 
-#define DEFAULT_IP                               "localhost"
-#define DEFAULT_PORT                         "1234"
+#define DEFAULT_IP                                "localhost"
+#define DEFAULT_PORT                          "1234"
 #define DEFAULT_PROTOCOL_FAMILY AF_UNSPEC
 
 #define DEFAULT_BACKLOG                   SOMAXCONN
 #define DEFAULT_RECV_MSG_LEN       255
 
 int main(int argc, char* argv[]) {
-    kani::TcpServerSocketInfo info;
-    info.m_node = DEFAULT_IP;
-    info.m_service = DEFAULT_PORT;
-    info.m_protocolFamily = DEFAULT_PROTOCOL_FAMILY;
-    info.m_backlog = DEFAULT_BACKLOG;
+    using namespace kani::simple_socket;
 
-    kani::TcpServer server(info);
+    TcpServerSocketInfo info;
+    info.m_node                 = DEFAULT_IP;
+    info.m_service             = DEFAULT_PORT;
+    info.m_protocolFamily = DEFAULT_PROTOCOL_FAMILY;
+    info.m_backlog            = DEFAULT_BACKLOG;
+
+    TcpServer server(info);
 
     if (!server.is_valid()) {
         std::cerr << "can't initialized server!" << std::endl;
         return 1;
     }
 
-    if (server.start() != kani::SS_START_RESULT_SUCCESS) {
+    if (server.start() != SS_START_RESULT_SUCCESS) {
         std::cerr << "can't start the server!" << std::endl;
         return 1;
     }
 
-    kani::TcpNetClient client;
+    TcpNetClient client;
     std::cout << "waiting for client..." << std::endl;
 
     while (!server.wait_client(&client)) { }
 
-    std::cout << "client ( " << client.get_ip() << " : " << client.get_port() << " ) connected!" << std::endl;
+    std::cout << "client ( " << client.get_host() << " : " << client.get_service() << " ) connected!" << std::endl;
 
-    kani::SendMsg msg;
+    SendMsg msg;
     msg.m_msg = "Hello, client! I'm a server. Welcome to my simple server 8)";
 
     if (!server.send_msg(&client, &msg)) {
@@ -44,7 +46,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "sent message to client: " << msg.m_sentLen << "byte" << std::endl;
 
-    kani::RecvMsg response(DEFAULT_RECV_MSG_LEN);
+    RecvMsg response(DEFAULT_RECV_MSG_LEN);
 
     if (!server.recv_msg(&client, &response)) {
         std::cerr << "can't received message from client!" << std::endl;

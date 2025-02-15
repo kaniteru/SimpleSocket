@@ -1,4 +1,4 @@
-#include <simple_socket.hpp>
+#include <kani/simple_socket.hpp>
 #include <iostream>
 
 #define DEFAULT_IP                                "localhost"
@@ -8,19 +8,21 @@
 #define DEFAULT_RECV_MSG_LEN        255
 
 int main(int argc, char* argv[]) {
-    kani::SocketInfo info;
-    info.m_node = DEFAULT_IP;
-    info.m_service = DEFAULT_PORT;
+    using namespace kani::simple_socket;
+
+    SocketInfo info;
+    info.m_node                 = DEFAULT_IP;
+    info.m_service             = DEFAULT_PORT;
     info.m_protocolFamily = DEFAULT_PROTOCOL_FAMILY;
 
-    kani::TcpClient client(info);
+    TcpClient client(info);
 
     if (!client.is_valid()) {
         std::cerr << "can't initialized client!" << std::endl;
         return 1;
     }
 
-    if (client.start() != kani::SS_START_RESULT_SUCCESS) {
+    if (client.start() != SS_START_RESULT_SUCCESS) {
         std::cerr << "can't start the client!" << std::endl;
         return 1;
     }
@@ -30,7 +32,7 @@ int main(int argc, char* argv[]) {
     while (!client.connect()) { }
 
     std::cout << "server connected!" << std::endl;
-    kani::RecvMsg msg(DEFAULT_RECV_MSG_LEN);
+    RecvMsg msg(DEFAULT_RECV_MSG_LEN);
 
     if (!client.recv_msg(&msg)) {
         std::cerr << "can't received message from server!" << std::endl;
@@ -40,7 +42,7 @@ int main(int argc, char* argv[]) {
     std::cout << "received message from server: " << msg.m_recvLen << "byte" << std::endl;
     std::cout << "Server: " << msg.m_msg << std::endl;
 
-    kani::SendMsg response;
+    SendMsg response;
     response.m_msg = "Hello, server! I'm a client. Thank you for your welcome X)";
 
     if (!client.send_msg(&response)) {

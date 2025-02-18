@@ -1767,7 +1767,7 @@ UdpClient::UdpClient(const SocketInfo& info) {
 }
 
 inline
-UdpClient::~UdpClient() { }
+UdpClient::~UdpClient() { stop(); }
 } //namespace simple_socket
 } //namespace kani
 

@@ -91,9 +91,11 @@ typedef int32_t kani_flag_t;
 
 #ifdef KANITERU_ASYNC_SOCKET_INCLUDED
     #define KANITERU_SIMPLE_SOCKET_CHECKED_ASYNC_SOCKET_INCLUDE
+namespace kani {
 namespace async_socket {
-    class IAsyncSocket;
-}
+    class ISocket;
+} //namespace async_socket
+} //namespace kani
 #endif //KANITERU_ASYNC_SOCKET_INCLUDED
 
 namespace kani {
@@ -106,7 +108,7 @@ namespace simple_socket {
  * @brief Using get status when buffer is sent or received.
  *              [ SS = SimpleSocket ]
  */
-enum eSSMsgStatus {
+enum eSSMsgStatus : int32_t {
     /* Received failed, to know the cause, using SocketErrTracker */
     SS_MSG_STATUS_UNKNOWN                                              = -1,
     /* Sent or received success. */
@@ -323,7 +325,7 @@ struct SocketHints {
 /**
  * @brief Used to return whether the socket is initialized or not.
  */
-enum eSSStartResult {
+enum eSSStartResult : int32_t {
     /* Started successfully. */
     SS_START_RESULT_SUCCESS                                  = 0,
     /* Failed to start because already started. */
@@ -412,7 +414,7 @@ private:
     WSAData m_wsaData; /* Required on win32 only */
 #endif //_WIN32
 #ifdef KANITERU_ASYNC_SOCKET_INCLUDED
-    friend async_socket::IAsyncSocket;
+    friend async_socket::ISocket;
 #endif //KANITERU_ASYNC_SOCKET_INCLUDED
 };
 

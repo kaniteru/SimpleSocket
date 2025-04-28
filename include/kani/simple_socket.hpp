@@ -1215,8 +1215,26 @@ public:
     /**
      * @brief Sends a message to the client.
      *
-     * @param [in] pClient
-     * @param [in, out] pMsg
+     * @param [in] client Client socket.
+     * @param [in, out] pMsg Msg ptr.
+     * @param [in] flag Flags for send().
+     * @return Returns true if sent successfully.
+     *
+     * @code
+     * TcpServer server(...);
+     * kani_socket_t fd = ...;
+     * SendMsg msg(...);
+     *
+     * if (server.send_msg(fd, &msg, ...)) { ... }
+     * @endcode
+     */
+    bool send_msg(kani_socket_t client, SendMsg* pMsg, kani_flag_t flag = 0) const;
+
+    /**
+     * @brief Sends a message to the client.
+     *
+     * @param [in] pClient Client ptr.
+     * @param [in, out] pMsg Msg ptr.
      * @param [in] flag Flags for send().
      * @return Returns true if sent successfully.
      *
@@ -1308,13 +1326,21 @@ bool TcpServer::wait_client(TcpNetClient* const pClient) const {
     return true;
 }
 
-inline
-bool TcpServer::send_msg(const TcpNetClient* const pClient, SendMsg* const pMsg, const kani_flag_t flag) const {
-    if (!pClient || !pMsg) {
+inline bool TcpServer::send_msg(const kani_socket_t client, SendMsg* const pMsg, const kani_flag_t flag) const {
+    if (!pMsg) {
         return false;
     }
 
-    return TcpMsgHelper::send_msg(pClient->get_socket(), pMsg, flag);
+    return TcpMsgHelper::send_msg(client, pMsg, flag);
+}
+
+inline
+bool TcpServer::send_msg(const TcpNetClient* const pClient, SendMsg* const pMsg, const kani_flag_t flag) const {
+    if (!pClient) {
+        return false;
+    }
+
+    return this->send_msg(pClient->get_socket(), pMsg, flag);
 }
 
 inline
